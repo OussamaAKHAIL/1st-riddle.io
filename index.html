@@ -1,4 +1,4 @@
-<!-- hello worled -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +6,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interactive Image Viewer</title>
   <style>
-    * {
+    * 
+    
+    {
       box-sizing: border-box;
       padding: 0;
       margin: 0;
+    }
+
+    .zoom-controls {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 35;
+      pointer-events: auto;
+    }
+
+    .zoom-button {
+      width: 40px;
+      height: 40px;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .zoom-button:hover {
+      transform: scale(1.1);
+    }
+
+    .zoom-icon {
+      fill: white;
+      width: 24px;
+      height: 24px;
+    }
+
+    .popup-image-wrapper {
+      transition: transform 0.3s ease;
+      transform-origin: center center;
     }
 
     html, body {
@@ -88,6 +129,7 @@
     }
 
     .popup-container.visible {
+        pointer-events: auto;
       opacity: 1;
       transform: scale(1);
       transition: opacity 0.5s ease, transform 0.5s ease;
@@ -230,6 +272,7 @@
       }
     }
     
+    
   </style>
 </head>
 <body>
@@ -255,19 +298,28 @@
 
     <!-- Popup Image Container -->
     <div class="popup-container" id="popupContainer">
-      <div class="popup-image-wrapper">
-        <img src="/placeholder.svg" alt="Selected content" class="popup-image" id="popupImage">
-      </div>
+        <div class="zoom-controls">
+            <div class="zoom-button" id="zoomInButton">
+              <svg class="zoom-icon" viewBox="0 0 24 24">
+                <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+              </svg>
+            </div>
+            <div class="zoom-button" id="zoomOutButton">
+              <svg class="zoom-icon" viewBox="0 0 24 24">
+                <path d="M19,13H5V11H19V13Z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="popup-image-wrapper" id="popupWrapper">
+            <img src="/placeholder.svg" alt="Selected content" class="popup-image" id="popupImage">
+          </div>
     </div>
 
     <!-- Close Button -->
     <div class="close-button" id="closeButton">✕</div>
 
     <!-- Cursor Position Tracker -->
-    <div class="cursor-tracker" id="cursorTracker">
-      Cursor Position: X: 0, Y: 0
-    </div>
-
+   
     <!-- Password Input -->
     <div class="password-container">
       <input type="text" class="password-input" id="passwordInput" placeholder="Enter password...">
@@ -285,6 +337,13 @@
 
   <script>
     // DOM Elements
+    let currentScale = 1;
+    const ZOOM_INCREMENT = 0.2;
+    const MIN_ZOOM = 0.5;
+    const MAX_ZOOM = 3;
+    const popupWrapper = document.getElementById('popupWrapper');
+    const zoomInButton = document.getElementById('zoomInButton');
+    const zoomOutButton = document.getElementById('zoomOutButton');
     const backgroundContainer = document.getElementById('backgroundContainer');
     const backgroundImage = document.getElementById('backgroundImage');
     const popupContainer = document.getElementById('popupContainer');
@@ -305,13 +364,15 @@
     const correctPasswords = ['polaris', 'aldebaran', 'letles h"fun', 'ananas'];
     const foundPasswords = [];
     const passwordMessages = {
-        'polaris': 'North Star? How original. Did you use a compass to find that? 🌟',
+        'polaris': 'North Star? How original. Did you use a compass to find that? ',
         'aldebaran': 'Astrology major? That\'s so 16th century. 🔭',
-        'tles h"fun': 'Someone\'s been playing with quotes. Grammar Nazi approved! ✍️',
-        'ananas': 'Oh, the sophisticated French word for... pineapple. Classy. 🍍'
+        'tles h"fun': 'Someone\'s been playing with quotes. Grammar Nazi approved! ',
+        'ananas': 'Oh, the sophisticated French word for... pineapple. Classy. '
     };
 
     // Event Listeners
+    zoomInButton.addEventListener('click', zoomIn);
+    zoomOutButton.addEventListener('click', zoomOut);
     document.addEventListener('mousemove', handleMouseMove);
     backgroundContainer.addEventListener('click', handleBackgroundClick);
     closeButton.addEventListener('click', closePopup);
@@ -328,6 +389,22 @@
     });
 
     // Functions
+    function zoomIn() {
+      if (currentScale >= MAX_ZOOM) return;
+      currentScale += ZOOM_INCREMENT;
+      applyZoom();
+    }
+
+    function zoomOut() {
+      if (currentScale <= MIN_ZOOM) return;
+      currentScale -= ZOOM_INCREMENT;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      popupWrapper.style.transform = `scale(${currentScale})`;
+    }
+
     function handleMouseMove(e) {
       cursorTracker.textContent = `Cursor Position: X: ${e.clientX}, Y: ${e.clientY}`;
     }
@@ -335,7 +412,10 @@
     function handleSectionClick(imageUrl) {
       if (isAnimating) return;
 
+      //isAnimating = true;
       isAnimating = true;
+      currentScale = 1; // Reset zoom
+      popupWrapper.style.transform = 'scale(1)';
       backgroundContainer.classList.add('darkened');
       popupImage.src = imageUrl;
       popupContainer.classList.add('visible');
@@ -353,15 +433,18 @@
     }
 
     function closePopup() {
-      if (isAnimating) return;
+        if (isAnimating) return;
 
-      isAnimating = true;
-      popupContainer.classList.remove('visible');
-      closeButton.classList.remove('visible');
-      backgroundContainer.classList.remove('darkened');
+isAnimating = true;
+popupContainer.classList.remove('visible');
+closeButton.classList.remove('visible');
+backgroundContainer.classList.remove('darkened');
 
-      setTimeout(() => {
-        isAnimating = false;
+// Reset zoom
+setTimeout(() => {
+  currentScale = 1;
+  popupWrapper.style.transform = 'scale(1)';
+  isAnimating = false;
       }, 500);
     }
 
@@ -393,11 +476,11 @@
                         }, 2000);
                     }
                 } else {
-                    passwordMessage.textContent = `You already found "${password}". Memory issues? 🧠`;
+                    passwordMessage.textContent = `You already found "${password}". Memory issues? `;
                     passwordMessage.style.display = 'block';
                 }
             } else {
-                passwordMessage.textContent = 'Nope. Try harder. Maybe consult a dictionary? 📖';
+                passwordMessage.textContent = 'Nope. Try harder. Maybe consult a dictionary? ';
                 passwordMessage.style.display = 'block';
             }
 
