@@ -1,0 +1,413 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Image Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .main {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .background-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: filter 0.5s ease;
+    }
+
+    .background-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .darkened {
+      filter: brightness(0.7);
+    }
+
+    .sections-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+    }
+
+    .section {
+  position: absolute;
+  cursor: pointer;
+  z-index: 20;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+   }
+
+    /*
+    
+    .section {
+      border: 1px solid rgba(255, 0, 0, 0.5);
+      background-color: rgba(255, 0, 0, 0.2);
+    }*/
+    
+
+    .popup-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    .popup-container.visible {
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .popup-image-wrapper {
+      max-width: 80%;
+      max-height: 80%;
+      position: relative;
+    }
+
+    .popup-image {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+
+    .close-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 20px;
+      z-index: 40;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .close-button.visible {
+      opacity: 1;
+    }
+
+    .cursor-tracker {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .password-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .password-input {
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: rgba(255, 255, 255, 0.8);
+      width: 200px;
+      font-size: 16px;
+    }
+
+    .password-message {
+      margin-top: 5px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .congratulations-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .congratulations-screen.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .congratulations-message {
+      max-width: 600px;
+      font-size: 20px;
+      line-height: 1.5;
+      margin-bottom: 40px;
+    }
+
+    .continue-button {
+      padding: 12px 30px;
+      background-color: #990000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px #ff0000;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 10px #ff0000;
+      }
+      50% {
+        box-shadow: 0 0 25px #ff0000, 0 0 40px #ff3333;
+      }
+      100% {
+        box-shadow: 0 0 10px #ff0000;
+      }
+    }
+    
+  </style>
+</head>
+<body>
+  <main class="main">
+    <!-- Background Image -->
+    <div class="background-container" id="backgroundContainer">
+      <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/view%201.png-tX18jzu5bdAoTzXjHXSrHUzaCFVMHm.jpeg" alt="Background" class="background-image" id="backgroundImage">
+    </div>
+
+    <!-- Clickable Sections -->
+    <div class="sections-container">
+        <!-- Section 1 -->
+        <div class="section" id="section1" style="clip-path: polygon(67.14% 1.11%, 89.46% 0.28%, 89.46% 77.1%, 71.44% 79.0%);"></div>
+        <!-- Section 2 -->
+        <div class="section" id="section2" style="clip-path: polygon(25.76% 7.57%, 58.02% 1.38%, 63.55% 85.97%, 33.26% 98.21%);"></div>
+      
+        <!-- Section 3 -->
+        <div class="section" id="section3" style="clip-path: polygon(0.47% 30.4%, 19.77% 3.58%, 34.19% 64.3%, 14.88% 86.8%);"></div>
+      
+        <!-- Section 4 -->
+        <div class="section" id="section4" style="clip-path: polygon(5.58% 80.8%, 17.21% 85.8%, 16.22% 100%, 5.81% 99.6%);"></div>
+      </div>
+
+    <!-- Popup Image Container -->
+    <div class="popup-container" id="popupContainer">
+      <div class="popup-image-wrapper">
+        <img src="/placeholder.svg" alt="Selected content" class="popup-image" id="popupImage">
+      </div>
+    </div>
+
+    <!-- Close Button -->
+    <div class="close-button" id="closeButton">✕</div>
+
+    <!-- Cursor Position Tracker -->
+    <div class="cursor-tracker" id="cursorTracker">
+      Cursor Position: X: 0, Y: 0
+    </div>
+
+    <!-- Password Input -->
+    <div class="password-container">
+      <input type="text" class="password-input" id="passwordInput" placeholder="Enter password...">
+      <div class="password-message" id="passwordMessage"></div>
+    </div>
+
+    <!-- Congratulations Screen -->
+    <div class="congratulations-screen" id="congratulationsScreen">
+      <div class="congratulations-message">
+        Congratulations! You've seen what others overlook—you're beginning to understand. But this is only the first step. The truth runs deeper than you think, and there's more waiting for you. Are you ready to continue?
+      </div>
+      <button class="continue-button" id="continueButton">Continue</button>
+    </div>
+  </main>
+
+  <script>
+    // DOM Elements
+    const backgroundContainer = document.getElementById('backgroundContainer');
+    const backgroundImage = document.getElementById('backgroundImage');
+    const popupContainer = document.getElementById('popupContainer');
+    const popupImage = document.getElementById('popupImage');
+    const closeButton = document.getElementById('closeButton');
+    const cursorTracker = document.getElementById('cursorTracker');
+    const section1 = document.getElementById('section1');
+    const section2 = document.getElementById('section2');
+    const section3 = document.getElementById('section3');
+    const section4 = document.getElementById('section4');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordMessage = document.getElementById('passwordMessage');
+    const congratulationsScreen = document.getElementById('congratulationsScreen');
+    const continueButton = document.getElementById('continueButton');
+
+    // State variables
+    let isAnimating = false;
+    const correctPasswords = ['polaris', 'aldebaran', 'letles h"fun', 'ananas'];
+    const foundPasswords = [];
+    const passwordMessages = {
+        'polaris': 'North Star? How original. Did you use a compass to find that? 🌟',
+        'aldebaran': 'Astrology major? That\'s so 16th century. 🔭',
+        'tles h"fun': 'Someone\'s been playing with quotes. Grammar Nazi approved! ✍️',
+        'ananas': 'Oh, the sophisticated French word for... pineapple. Classy. 🍍'
+    };
+
+    // Event Listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    backgroundContainer.addEventListener('click', handleBackgroundClick);
+    closeButton.addEventListener('click', closePopup);
+    section1.addEventListener('click', () => handleSectionClick('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-fd4YSYUxg4XWNnvD73MEKzbEaHdfgw.png'));
+    section2.addEventListener('click', () => handleSectionClick('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/14-removebg-0BrpX5QnzTyqsKed0GYhS5RkEeyVxm.png'));
+    section3.addEventListener('click', () => handleSectionClick('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/map-rUTSJ7kwKwPDz8zrhgu2vd4Wl5khdb.png'));
+    section4.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSectionClick('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/GSM%20module%20%281%29-s2LqitU2raJqNPGmFkOwlq5U8cdLfG.png');
+    });
+    passwordInput.addEventListener('keypress', handlePasswordInput);
+    continueButton.addEventListener('click', () => {
+      window.location.href = 'https://ak-space-technologie-store.vercel.app/';
+    });
+
+    // Functions
+    function handleMouseMove(e) {
+      cursorTracker.textContent = `Cursor Position: X: ${e.clientX}, Y: ${e.clientY}`;
+    }
+
+    function handleSectionClick(imageUrl) {
+      if (isAnimating) return;
+
+      isAnimating = true;
+      backgroundContainer.classList.add('darkened');
+      popupImage.src = imageUrl;
+      popupContainer.classList.add('visible');
+      closeButton.classList.add('visible');
+
+      setTimeout(() => {
+        isAnimating = false;
+      }, 500);
+    }
+
+    function handleBackgroundClick() {
+      if (popupContainer.classList.contains('visible') && !isAnimating) {
+        closePopup();
+      }
+    }
+
+    function closePopup() {
+      if (isAnimating) return;
+
+      isAnimating = true;
+      popupContainer.classList.remove('visible');
+      closeButton.classList.remove('visible');
+      backgroundContainer.classList.remove('darkened');
+
+      setTimeout(() => {
+        isAnimating = false;
+      }, 500);
+    }
+
+    function handlePasswordInput(e) {
+        if (e.key === 'Enter') {
+            const password = passwordInput.value.trim().toLowerCase();
+            
+            if (correctPasswords.includes(password)) {
+                if (!foundPasswords.includes(password)) {
+                    foundPasswords.push(password);
+                    passwordInput.value = '';
+                    
+                    // Show specific message with remaining count
+                    passwordMessage.textContent = passwordMessages[password];
+                    
+                    // Add remaining words counter if not completed
+                    if (foundPasswords.length < correctPasswords.length) {
+                        const remaining = correctPasswords.length - foundPasswords.length;
+                        passwordMessage.textContent += ` (${remaining} ${remaining === 1 ? 'word' : 'words'} left)`;
+                    }
+                    
+                    passwordMessage.style.display = 'block';
+
+                    // Final celebration
+                    if (foundPasswords.length === correctPasswords.length) {
+                        passwordMessage.textContent += ' All secrets uncovered!';
+                        setTimeout(() => {
+                            congratulationsScreen.classList.add('visible');
+                        }, 2000);
+                    }
+                } else {
+                    passwordMessage.textContent = `You already found "${password}". Memory issues? 🧠`;
+                    passwordMessage.style.display = 'block';
+                }
+            } else {
+                passwordMessage.textContent = 'Nope. Try harder. Maybe consult a dictionary? 📖';
+                passwordMessage.style.display = 'block';
+            }
+
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                passwordMessage.style.display = 'none';
+            }, 3000);
+        }
+    }
+</script>
+</body>
+</html>
+
