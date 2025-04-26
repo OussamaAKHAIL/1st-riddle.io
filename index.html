@@ -276,6 +276,11 @@
   </style>
 </head>
 <body>
+  <!-- Add this audio element -->
+  <audio id="backgroundMusic" loop>
+    <source src="https://audio.jukehost.co.uk/SqyiaZ10DVh66S79WUEkB3VTEXOA5Xot" type="audio/mp3">
+    Your browser does not support the audio element.
+  </audio>
   <main class="main">
     <!-- Background Image -->
     <div class="background-container" id="backgroundContainer">
@@ -364,10 +369,10 @@
     const correctPasswords = ['polaris', 'aldebaran', 'letles h"fun', 'ananas'];
     const foundPasswords = [];
     const passwordMessages = {
-        'polaris': 'North Star? How original. Did you use a compass to find that? ',
-        'aldebaran': 'Astrology major? That\'s so 16th century. 🔭',
-        'tles h"fun': 'Someone\'s been playing with quotes. Grammar Nazi approved! ',
-        'ananas': 'Oh, the sophisticated French word for... pineapple. Classy. '
+        'polaris': 'yay !',
+        'aldebaran': ' emm your a man of culture 🔭',
+        'tles h"fun': 'how did you find this?',
+        'ananas': 'thinking out of the box huh? '
     };
 
     // Event Listeners
@@ -480,7 +485,7 @@ setTimeout(() => {
                     passwordMessage.style.display = 'block';
                 }
             } else {
-                passwordMessage.textContent = 'Nope. Try harder. Maybe consult a dictionary? ';
+                passwordMessage.textContent = 'Nope. Try harder ';
                 passwordMessage.style.display = 'block';
             }
 
@@ -490,6 +495,49 @@ setTimeout(() => {
             }, 3000);
         }
     }
+    // Add this to your existing DOM Elements section
+    const backgroundMusic = document.getElementById('backgroundMusic');
+
+// Autoplay handling
+function handleFirstUserInteraction() {
+  // Remove this listener after first interaction
+  document.removeEventListener('click', handleFirstUserInteraction);
+  document.removeEventListener('touchstart', handleFirstUserInteraction);
+  
+  try {
+    backgroundMusic.volume = 0.05;
+    backgroundMusic.play().catch(error => {
+      console.log('Playback failed even after interaction:', error);
+    });
+  } catch (error) {
+    console.log('Audio playback error:', error);
+  }
+}
+// Add this function to your existing functions
+function startBackgroundMusic() {
+  // This will try to start the music and handle any autoplay restrictions
+  backgroundMusic.volume = 0.01; // Set volume to 50%
+  const playPromise = backgroundMusic.play();
+  
+  // Handle any autoplay restrictions
+  if (playPromise !== undefined) {
+    playPromise.catch(error => {
+      // Auto-play was prevented, show a play button or something
+      console.log('Autoplay prevented:', error);
+    });
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+      // Try to autoplay immediately
+      backgroundMusic.volume = 0.1;
+      backgroundMusic.play().catch(error => {
+        console.log('Autoplay blocked, waiting for interaction...');
+        // If autoplay fails, wait for first click or touch
+        document.addEventListener('click', handleFirstUserInteraction);
+        document.addEventListener('touchstart', handleFirstUserInteraction);
+      });
+    });
 </script>
 </body>
 </html>
